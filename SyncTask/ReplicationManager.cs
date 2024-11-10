@@ -71,17 +71,7 @@ namespace SyncTask.ReplicationManagement
             // Traversing all folders
             foreach (string subFolder in subFolders)
             {
-                if (IsDirectoryMissingInReplica(subFolder))
-                {
-                    HandleFolderReplication(subFolder);
-                    RaiseItemChanged(subFolder, MessageType.Added, ItemType.folder);
-                } 
-                else if (!AreAttributesEqual(subFolder))
-                {
-                    HandleFolderReplication(subFolder);
-                    RaiseItemChanged(subFolder, MessageType.Modified, ItemType.folder);
-                }
-                
+                ProcessDirectory(subFolder);                
                 currentSourceFiles.Add(subFolder);
 
                 // Traverse next subfolder
@@ -91,104 +81,64 @@ namespace SyncTask.ReplicationManagement
             // Traversing all files
             foreach (string file in files)
             {
-                string? hash = HashUtils.GetFileHash(file);
-                currentSourceFiles.Add(file);
-
-                // Added a new file - if it wasn't in dictionary
-                if (!sourceFilesDictionary.ContainsKey(file))
-                {
-                    sourceFilesDictionary.Add(file, hash);
-                    HandleFileReplication(file, MessageType.Added);
-                }
-                // Update a modified file (content / metadata)
-                else if (hash != null && !HashUtils.AreHashesEqual(hash, sourceFilesDictionary[file]))
-                {
-                    sourceFilesDictionary[file] = hash;
-                    HandleFileReplication(file, MessageType.Modified);
-                }
-                // Copy a file missing in replica. We know that the file is in dictionary
-                // (should be in replica) due to the first condition
-                else if (IsMissingInReplica(file))
-                {
-                    sourceFilesDictionary[file] = hash;
-                    HandleFileReplication(file, MessageType.Missing);
-                }
-                // Update a file when attributes are changed only in the replica
-                else if (!AreAttributesEqual(file))
-                {
-                    sourceFilesDictionary[file] = hash;
-                    HandleFileReplication(file, MessageType.Modified);
-                }
-                // Update a file when the content is changed only in the replica
-                else if (!IsTargetHashEqual(file))
-                {
-                    sourceFilesDictionary[file] = hash;
-                    HandleFileReplication(file, MessageType.Modified);
-                }
+                processFile(file);
             }
         }
 
-        // Deletes files, which are not in the source directory (dictionary).
-        private void CleanUpReplica(string targetPath)
+        // Processes file, and decides, whether it will be copied and on what grounds
+        private void processFile(string file) 
         {
-            try
-            {
-                string[] subFolders = Directory.GetDirectories(targetPath);
-                string[] files = Directory.GetFiles(targetPath);
+            string? hash = HashUtils.GetFileHash(file);
+            currentSourceFiles.Add(file);
 
-                // Traversing all folders
-                foreach (string subFolder in subFolders)
-                {
-                    if (ShouldBeRemoved(subFolder))
-                    {
-                        Directory.Delete(subFolder, true);
-                        RaiseItemChanged(subFolder, MessageType.Removed, ItemType.folder);
-                        
-                    } else
-                    {
-                        CleanUpReplica(subFolder);
-                    }
-                }
-
-                 //Traversing all files
-                foreach (string file in files)
-                {
-                    if (ShouldBeRemoved(file))
-                    {
-                        // Enable deletion of read only files
-                        File.SetAttributes(file, FileAttributes.Normal);
-                        File.Delete(file);
-                        RaiseItemChanged(file, MessageType.Removed, ItemType.file);
-                    }
-                }
-            }
-            catch (DirectoryNotFoundException)
+            // Added a new file - if it wasn't in dictionary
+            if (!sourceFilesDictionary.ContainsKey(file))
             {
-                Console.WriteLine("The source directory doesn't exist during cleanup. Please try again.");
+                sourceFilesDictionary.Add(file, hash);
+                HandleFileReplication(file, MessageType.Added);
             }
-            catch (FileNotFoundException)
+            // Update a modified file (content / metadata)
+            else if (hash != null && !HashUtils.AreHashesEqual(hash, sourceFilesDictionary[file]))
             {
-                Console.WriteLine("File has not been found during cleanup.");
+                sourceFilesDictionary[file] = hash;
+                HandleFileReplication(file, MessageType.Modified);
             }
-            catch (UnauthorizedAccessException)
+            // Copy a file missing in replica. We know that the file is
+            // in the dictionary due to the first condition
+            else if (IsMissingInReplica(file))
             {
-                Console.WriteLine("Access denied during cleanup. Please try again.");
+                sourceFilesDictionary[file] = hash;
+                HandleFileReplication(file, MessageType.Missing);
             }
-            catch (Exception e)
+            // We now know, the file is present in the replica
+            // Update a file when attributes are changed only in the replica
+            else if (!AreAttributesEqual(file))
             {
-                Console.WriteLine($"Unexpected error. Please try again. + {e.Message}");
+                sourceFilesDictionary[file] = hash;
+                HandleFileReplication(file, MessageType.Modified);
+            }
+            // Update a file when the content is changed only in the replica
+            else if (!IsTargetHashEqual(file))
+            {
+                sourceFilesDictionary[file] = hash;
+                HandleFileReplication(file, MessageType.Modified);
             }
         }
 
-        // At the end of synchronization: Removes removed files in source directory from the dictionary.
-        private void CleanUpSourceDictionary()
+        // Processes a directory, and decides, whether it will be copied and on what grounds
+        private void ProcessDirectory(string directory)
         {
-            foreach (string item in sourceFilesDictionary.Keys)
+            // Add missing folders to replica
+            if (IsDirectoryMissingInReplica(directory))
             {
-                if (!currentSourceFiles.Contains(item))
-                {
-                    sourceFilesDictionary.Remove(item);
-                }
+                HandleFolderReplication(directory);
+                RaiseItemChanged(directory, MessageType.Added, ItemType.folder);
+            }
+            // Modify attributes in replica according to source
+            else if (!AreAttributesEqual(directory))
+            {
+                HandleFolderReplication(directory);
+                RaiseItemChanged(directory, MessageType.Modified, ItemType.folder);
             }
         }
 
@@ -251,6 +201,71 @@ namespace SyncTask.ReplicationManagement
 
         }
 
+        // Deletes files, which are not in the source directory (dictionary).
+        private void CleanUpReplica(string targetPath)
+        {
+            try
+            {
+                string[] subFolders = Directory.GetDirectories(targetPath);
+                string[] files = Directory.GetFiles(targetPath);
+
+                // Traversing all folders
+                foreach (string subFolder in subFolders)
+                {
+                    if (ShouldBeRemoved(subFolder))
+                    {
+                        Directory.Delete(subFolder, true);
+                        RaiseItemChanged(subFolder, MessageType.Removed, ItemType.folder);
+
+                    }
+                    else
+                    {
+                        CleanUpReplica(subFolder);
+                    }
+                }
+
+                //Traversing all files
+                foreach (string file in files)
+                {
+                    if (ShouldBeRemoved(file))
+                    {
+                        // Enable deletion of read only files
+                        File.SetAttributes(file, FileAttributes.Normal);
+                        File.Delete(file);
+                        RaiseItemChanged(file, MessageType.Removed, ItemType.file);
+                    }
+                }
+            }
+            catch (DirectoryNotFoundException)
+            {
+                Console.WriteLine("The source directory doesn't exist during cleanup. Please try again.");
+            }
+            catch (FileNotFoundException)
+            {
+                Console.WriteLine("File has not been found during cleanup.");
+            }
+            catch (UnauthorizedAccessException)
+            {
+                Console.WriteLine("Access denied during cleanup. Please try again.");
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine($"Unexpected error. Please try again. + {e.Message}");
+            }
+        }
+
+        // At the end of synchronization: Removes removed files in source directory from the dictionary.
+        private void CleanUpSourceDictionary()
+        {
+            foreach (string item in sourceFilesDictionary.Keys)
+            {
+                if (!currentSourceFiles.Contains(item))
+                {
+                    sourceFilesDictionary.Remove(item);
+                }
+            }
+        }
+
         // Returns true if the file is missing from source dictionary, meaning it should be deleted
         private bool ShouldBeRemoved(string targetAbsolutePath)
         {
@@ -259,18 +274,6 @@ namespace SyncTask.ReplicationManagement
                 return false;
             }
             return true;
-        }
-
-        private bool IsMissingInReplica(string sourceAbsolutePath)
-        {
-            string targetAbsolutePath = GetAbsoluteTargetPath(sourceAbsolutePath);
-            return !File.Exists(targetAbsolutePath);
-        }
-
-        private bool IsDirectoryMissingInReplica(string sourceAbsolutePath)
-        {
-            string targetAbsolutePath = GetAbsoluteTargetPath(sourceAbsolutePath);
-            return !Directory.Exists(targetAbsolutePath);
         }
 
         private bool AreAttributesEqual(string sourceAbsolutePath)
@@ -318,6 +321,17 @@ namespace SyncTask.ReplicationManagement
         private void RaiseItemChanged(string path, MessageType messageType, ItemType itemType)
         {
             LogMessageSent?.Invoke(this, new LogEventArgs(path, messageType, itemType));
+        }
+        private bool IsMissingInReplica(string sourceAbsolutePath)
+        {
+            string targetAbsolutePath = GetAbsoluteTargetPath(sourceAbsolutePath);
+            return !File.Exists(targetAbsolutePath);
+        }
+
+        private bool IsDirectoryMissingInReplica(string sourceAbsolutePath)
+        {
+            string targetAbsolutePath = GetAbsoluteTargetPath(sourceAbsolutePath);
+            return !Directory.Exists(targetAbsolutePath);
         }
     }
 }
