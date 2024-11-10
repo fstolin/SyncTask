@@ -24,9 +24,9 @@ namespace SyncTask
             //Console.WriteLine("Enter interval:");
             float interval = 2.0f;
 
-            replicationManager = new ReplicationManager(sourcePath, targetPath, interval);
+            replicationManager = new ReplicationManager(sourcePath, targetPath);
             LoggingManager logManager = new LoggingManager(logFilePath);
-            replicationManager.OnItemChanged += logManager.OnFileChangedEvent;
+            replicationManager.ItemChanged += logManager.OnFileChangedEvent;
 
             StartSyncTimer(interval);
 

@@ -12,19 +12,17 @@ namespace SyncTask.ReplicationManagement
 {
     class ReplicationManager
     {
-        public event EventHandler<LogEventArgs>? OnItemChanged;
+        public event EventHandler<LogEventArgs>? ItemChanged;
 
-        private readonly string InitialSourcePath;
-        private readonly string TargetPath;
-        private readonly float SyncInterval;
-        private Dictionary<string, string> SourceFilesDictionary;
+        private readonly string initialSourcePah;
+        private readonly string targetPath;
+        private Dictionary<string, string> sourceFilesDictionary;
 
-        public ReplicationManager(string sourcePath, string targetPath, float Interval) 
+        public ReplicationManager(string sourcePath, string targetPath) 
         {
-            InitialSourcePath = sourcePath;
-            TargetPath = targetPath;
-            SyncInterval = Interval;
-            SourceFilesDictionary = new Dictionary<string, string>();
+            initialSourcePah = sourcePath;
+            this.targetPath = targetPath;
+            sourceFilesDictionary = new Dictionary<string, string>();
         }
 
         // Initializes the replication process
@@ -33,10 +31,10 @@ namespace SyncTask.ReplicationManagement
             try
             {
                 // Temporary hack
-                SourceFilesDictionary.Clear();
-                Directory.CreateDirectory(TargetPath);
-                ReplicateDirectory(InitialSourcePath);
-                CleanUpReplica(TargetPath);
+                sourceFilesDictionary.Clear();
+                Directory.CreateDirectory(targetPath);
+                ReplicateDirectory(initialSourcePah);
+                CleanUpReplica(targetPath);
             }
             catch(IOException) {
                 Console.WriteLine("I/O error. Please try again.");
@@ -49,9 +47,9 @@ namespace SyncTask.ReplicationManagement
             {
                 Console.WriteLine("Access denied in initialization.");
             }
-            catch (Exception)
+            catch (Exception e)
             {
-                Console.WriteLine("Unexpected error. Please try again.");
+                Console.WriteLine($"Unexpected error. Please try again. + {e.Message}");
                 throw;
             }
             // Initialization was succesful, synchronization is in progress.
@@ -68,7 +66,7 @@ namespace SyncTask.ReplicationManagement
             foreach (string subFolder in subFolders)
             {
                 HandleDirectoryReplication(subFolder);
-                SourceFilesDictionary.Add(subFolder, Path.GetFileName(subFolder));
+                sourceFilesDictionary.Add(subFolder, Path.GetFileName(subFolder));
                 // Traverse next subfolder
                 ReplicateDirectory(subFolder);
             }
@@ -77,7 +75,7 @@ namespace SyncTask.ReplicationManagement
             foreach (string file in files)
             {
                 HandleFileReplication(file);
-                SourceFilesDictionary.Add(file, Path.GetFileName(file));                              
+                sourceFilesDictionary.Add(file, Path.GetFileName(file));                              
             }
 
         }
@@ -93,10 +91,10 @@ namespace SyncTask.ReplicationManagement
                 // Traversing all folders
                 foreach (string subFolder in subFolders)
                 {
-                    if (shouldBeRemoved(subFolder))
+                    if (ShouldBeRemoved(subFolder))
                     {
                         Directory.Delete(subFolder, true);
-                        ItemChanged(subFolder, MessageType.Removed, ItemType.Folder);
+                        RaiseItemChanged(subFolder, MessageType.Removed, ItemType.folder);
                         
                     } else
                     {
@@ -107,12 +105,12 @@ namespace SyncTask.ReplicationManagement
                  //Traversing all files
                 foreach (string file in files)
                 {
-                    if (shouldBeRemoved(file))
+                    if (ShouldBeRemoved(file))
                     {
                         // Enable deletion of read only files
                         File.SetAttributes(file, FileAttributes.Normal);
                         File.Delete(file);
-                        ItemChanged(file, MessageType.Removed, ItemType.File);
+                        RaiseItemChanged(file, MessageType.Removed, ItemType.file);
                     }
                 }
             }
@@ -128,9 +126,9 @@ namespace SyncTask.ReplicationManagement
             {
                 Console.WriteLine("Access denied during cleanup. Please try again.");
             }
-            catch (Exception)
+            catch (Exception e)
             {
-                Console.WriteLine("Unexpected error. Please try again.");
+                Console.WriteLine($"Unexpected error. Please try again. + {e.Message}");
             }
         }
 
@@ -156,9 +154,9 @@ namespace SyncTask.ReplicationManagement
             {
                 Console.WriteLine("Access denied in replication.");
             }
-            catch (Exception)
+            catch (Exception e)
             {
-                Console.WriteLine("Unexpected error. Please try again.");
+                Console.WriteLine($"Unexpected error. Please try again. + {e.Message}");
                 throw;
             }
         }
@@ -192,9 +190,9 @@ namespace SyncTask.ReplicationManagement
         }
 
         // Returns true if the file is missing from source dictionary, meaning it should be deleted
-        private bool shouldBeRemoved(string targetAbsolutePath)
+        private bool ShouldBeRemoved(string targetAbsolutePath)
         {
-            if (SourceFilesDictionary.ContainsKey(GetAbsoluteSourcePath(targetAbsolutePath)))
+            if (sourceFilesDictionary.ContainsKey(GetAbsoluteSourcePath(targetAbsolutePath)))
             {
                 return false;
             }
@@ -204,21 +202,21 @@ namespace SyncTask.ReplicationManagement
         // Converts from original absolute path to absolute path for the target directory
         private string GetAbsoluteTargetPath(string path)
         {
-            string relativePath = Path.GetRelativePath(InitialSourcePath, path);
-            return Path.Combine(TargetPath, relativePath);
+            string relativePath = Path.GetRelativePath(initialSourcePah, path);
+            return Path.Combine(targetPath, relativePath);
         }
 
         // Converts from target absolute path to original absolute path
         private string GetAbsoluteSourcePath(string path)
         {
-            string relativePath = Path.GetRelativePath(TargetPath, path);
-            return Path.Combine (InitialSourcePath, relativePath);
+            string relativePath = Path.GetRelativePath(targetPath, path);
+            return Path.Combine (initialSourcePah, relativePath);
         }
 
         // Invokes OnFileChanged event for a directory / file
-        private void ItemChanged(string path, MessageType messageType, ItemType itemType)
+        private void RaiseItemChanged(string path, MessageType messageType, ItemType itemType)
         {
-            OnItemChanged?.Invoke(this, new LogEventArgs(path, messageType, itemType));
+            ItemChanged?.Invoke(this, new LogEventArgs(path, messageType, itemType));
         }
     }
 }
