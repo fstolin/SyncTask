@@ -7,6 +7,7 @@ namespace SyncTask
     {
         // Change to list to support multiple replications if needed
         private static ReplicationManager replicationManager;
+        
         private static System.Timers.Timer syncTimer = new System.Timers.Timer();
         private static bool initSuccesful = false;
 
@@ -17,15 +18,16 @@ namespace SyncTask
             // TODO: Change to cmd line parameters
             Console.WriteLine("Enter sourcePath:");
             string sourcePath = Console.ReadLine();
-            string targetPath = "D:/Sandbox/Backup";
+            string targetPath = "D:\\Sandbox\\Backup";
             //Console.WriteLine("Enter logFilePath:");
             string logFilePath = "empty";
             //Console.WriteLine("Enter interval:");
             float interval = 2.0f;
 
-            
+            replicationManager = new ReplicationManager(sourcePath, targetPath, interval);
+            LoggingManager logManager = new LoggingManager(logFilePath);
+            replicationManager.OnItemChanged += logManager.OnFileChangedEvent;
 
-            replicationManager = new ReplicationManager(sourcePath, targetPath, logFilePath, interval);
             StartSyncTimer(interval);
 
             if (initSuccesful)

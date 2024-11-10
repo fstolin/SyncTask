@@ -1,4 +1,5 @@
-﻿using System;
+﻿using SyncTask.Logging;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel.Design;
 using System.Linq;
@@ -11,17 +12,17 @@ namespace SyncTask.ReplicationManagement
 {
     class ReplicationManager
     {
+        public event EventHandler<LogEventArgs>? OnItemChanged;
+
         private readonly string InitialSourcePath;
         private readonly string TargetPath;
-        private readonly string LogFilePath;
         private readonly float SyncInterval;
         private Dictionary<string, string> SourceFilesDictionary;
 
-        public ReplicationManager(string sourcePath, string targetPath, string logFilePath, float Interval) 
+        public ReplicationManager(string sourcePath, string targetPath, float Interval) 
         {
             InitialSourcePath = sourcePath;
             TargetPath = targetPath;
-            LogFilePath = logFilePath;
             SyncInterval = Interval;
             SourceFilesDictionary = new Dictionary<string, string>();
         }
@@ -95,6 +96,8 @@ namespace SyncTask.ReplicationManagement
                     if (shouldBeRemoved(subFolder))
                     {
                         Directory.Delete(subFolder, true);
+                        ItemChanged(subFolder, MessageType.Removed, ItemType.Folder);
+                        
                     } else
                     {
                         CleanUpReplica(subFolder);
@@ -109,6 +112,7 @@ namespace SyncTask.ReplicationManagement
                         // Enable deletion of read only files
                         File.SetAttributes(file, FileAttributes.Normal);
                         File.Delete(file);
+                        ItemChanged(file, MessageType.Removed, ItemType.File);
                     }
                 }
             }
@@ -209,6 +213,12 @@ namespace SyncTask.ReplicationManagement
         {
             string relativePath = Path.GetRelativePath(TargetPath, path);
             return Path.Combine (InitialSourcePath, relativePath);
+        }
+
+        // Invokes OnFileChanged event for a directory / file
+        private void ItemChanged(string path, MessageType messageType, ItemType itemType)
+        {
+            OnItemChanged?.Invoke(this, new LogEventArgs(path, messageType, itemType));
         }
     }
 }
