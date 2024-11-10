@@ -6,13 +6,17 @@ namespace SyncTask
     {
         static void Main(string[] args)
         {
-            string? sourcePath = Console.ReadLine();
-            if (sourcePath == null) return;
-            ReplicationManager repManager = new ReplicationManager(sourcePath, "", 1.0f);
-            repManager.InitializeReplication();
+            // TODO: Change to cmd line parameters
+            Console.WriteLine("Enter sourcePath:");
+            string sourcePath = Console.ReadLine();
+            string targetPath = "D:/Sandbox/Backup";
+            //Console.WriteLine("Enter logFilePath:");
+            string logFilePath = "empty";
+            //Console.WriteLine("Enter interval:");
+            float interval = 5.0f;
 
-            Console.WriteLine("Program finished. Press any key to exit.");
-            Console.ReadKey();
+            ReplicationManager replicationManager = new ReplicationManager(sourcePath, targetPath, logFilePath, interval);
+            replicationManager.InitializeReplication();
         }
 
     }
