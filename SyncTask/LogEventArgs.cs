@@ -22,6 +22,7 @@ namespace SyncTask.Logging
         folder
     }
 
+    // Event arguments for logging purposes
     public class LogEventArgs : EventArgs
     {
         public string Message { get; set; }

@@ -7,46 +7,47 @@ namespace SyncTask
 {
     internal class Program
     {
-
-        // Change to list to support multiple replications if needed
-        private static ReplicationManager replicationManager;
-        
+        private static ReplicationManager? replicationManager;
+        private static LoggingManager? logManager;
+        private static string? sourcePath;
+        private static string? targetPath;
+        private static string? logFilePath;
+        private static float interval = 10.0f;
         private static System.Timers.Timer syncTimer = new System.Timers.Timer();
-        private static bool initSuccesful = false;
-
-        public static void SetInitSuccesful() { initSuccesful = true; }
 
         static void Main(string[] args)
         {
-            // TODO: Change to cmd line parameters
-            Console.WriteLine("Enter sourcePath:");
-            string sourcePath = Console.ReadLine();
-            string targetPath = "D:\\Sandbox\\Backup";
-            
-            //Console.WriteLine("Enter logFilePath:");
-            string logFilePath = "D:\\Sandbox\\Log.txt";
-            //Console.WriteLine("Enter interval:");
-            float interval = 2.0f;
-
-            LoggingManager logManager = new LoggingManager(logFilePath);            
-
-            if (sourcePath.ToLower() == targetPath.ToLower())
+            // Check number of arguments
+            if (args.Length < 3 || args.Length > 4)
             {
-                logManager.OnLogEventRaised(null, new LogEventArgs("Source path and target path are the same! Press any key to exit.", MessageType.Error));
-                Console.ReadKey();
-                return;
-            }
-            if (logFilePath.StartsWith(targetPath))
-            {
-                logManager.OnLogEventRaised(null, new LogEventArgs("Log path is in target path's directory!", MessageType.Error));
-                Console.ReadKey();
+                Console.WriteLine("[Error] Incorrect number of arguments. Expected 3 or 4. Correct format: (source path, target path, log file path, interval [s] (default: 10s)");
+                TerminateProgram();
                 return;
             }
 
+            // Assign arguments to their variables
+            sourcePath = args[0];
+            targetPath = args[1];
+            logFilePath = args[2];
+            if (args.Length > 3)
+            {
+                interval = Convert.ToSingle(args[3]);
+            }
+
+            // Check the validity of the arguments
+            if (!ArePathsValid())
+            {
+                TerminateProgram();
+            }
+
+            // Start the main flow - create logManager,
+            // create replication manager, subscribe to logging events
+            logManager = new LoggingManager(logFilePath);
             replicationManager = new ReplicationManager(sourcePath, targetPath);
             replicationManager.LogMessageSent += logManager.OnLogEventRaised;
             HashUtils.UtilsLogMessageSent += logManager.OnLogEventRaised;
 
+            // Start the synchronization and synchronization timer
             replicationManager.InitializeReplication();
             StartSyncTimer(interval);
             Console.ReadKey();
@@ -54,7 +55,7 @@ namespace SyncTask
 
         private static void OnSyncIntervalElapsed(object? source, ElapsedEventArgs e)
         {
-            replicationManager.InitializeReplication();
+            replicationManager?.InitializeReplication();
         }
 
         private static void StartSyncTimer(float interval)
@@ -63,6 +64,34 @@ namespace SyncTask
             syncTimer.Elapsed += OnSyncIntervalElapsed;            
             syncTimer.AutoReset = true;
             syncTimer.Enabled = true;
+        }
+
+        // Checks whether the paths (source, replica, log) are valid.
+        // Uses console writing, logManager is instanced after check.
+        private static bool ArePathsValid()
+        {
+            if (sourcePath == null || targetPath == null || logFilePath == null)
+            {
+                Console.Write("At least one of the paths is null! ");
+                return false;
+            } 
+            else if (sourcePath.ToLower() == targetPath.ToLower())
+            {
+                Console.Write("Source path and target path are the same! ");
+                return false;
+            }
+            else if (logFilePath.StartsWith(targetPath))
+            {
+                Console.Write("Log path is in target path's directory! ");
+                return false;
+            }
+            return true;
+        }
+
+        private static void TerminateProgram()
+        {
+            Console.WriteLine("Press any key to exit.");
+            Console.ReadKey();
         }
 
     }

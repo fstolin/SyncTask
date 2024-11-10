@@ -81,12 +81,12 @@ namespace SyncTask.ReplicationManagement
             // Traversing all files
             foreach (string file in files)
             {
-                processFile(file);
+                ProcessFile(file);
             }
         }
 
         // Processes file, and decides, whether it will be copied and on what grounds
-        private void processFile(string file) 
+        private void ProcessFile(string file) 
         {
             string? hash = HashUtils.GetFileHash(file);
             currentSourceFiles.Add(file);
@@ -201,7 +201,7 @@ namespace SyncTask.ReplicationManagement
 
         }
 
-        // Deletes files, which are not in the source directory (dictionary).
+        // Deletes files in replica, which are not in the source directory (dictionary).
         private void CleanUpReplica(string targetPath)
         {
             try
@@ -276,12 +276,32 @@ namespace SyncTask.ReplicationManagement
             return true;
         }
 
+        // Compares source file attributes with target file attributes
         private bool AreAttributesEqual(string sourceAbsolutePath)
         {
-            string targetAbsolutePath = GetAbsoluteTargetPath(sourceAbsolutePath);
-            FileAttributes sourceAttributes = File.GetAttributes(sourceAbsolutePath);
-            FileAttributes targetAttributes = File.GetAttributes(targetAbsolutePath);
-            return sourceAttributes.Equals(targetAttributes);
+            try
+            {
+                string targetAbsolutePath = GetAbsoluteTargetPath(sourceAbsolutePath);
+                FileAttributes sourceAttributes = File.GetAttributes(sourceAbsolutePath);
+                FileAttributes targetAttributes = File.GetAttributes(targetAbsolutePath);
+                return sourceAttributes.Equals(targetAttributes);
+            }
+            catch (FileNotFoundException)
+            {
+                RaiseErrorMessage("File has not been found during attribute comparison.");
+                return false;
+            }
+            catch (IOException)
+            {
+                RaiseErrorMessage("IO Exception during attribute comparison.");
+                return false;
+
+            }
+            catch (Exception e)
+            {
+                RaiseErrorMessage($"Unexpected error when comparing Attributes. Please try again. + {e.Message}");
+                return false;
+            }
         }
 
         // Compares a hash to a generated hash of the file in the replica (simple hash only - no metada)
