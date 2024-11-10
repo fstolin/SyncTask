@@ -25,7 +25,7 @@ namespace SyncTask
                 Directory.CreateDirectory(directoryPath);
 
                 // Create or open the file
-                FileStream fileStream = new FileStream(logFilePath, FileMode.Append, FileAccess.ReadWrite, FileShare.ReadWrite);
+                FileStream fileStream = new FileStream(logFilePath, FileMode.Append, FileAccess.Write, FileShare.ReadWrite);
                 streamWriter = new StreamWriter(fileStream);
             }
             catch (IOException)
