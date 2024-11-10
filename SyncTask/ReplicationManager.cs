@@ -50,7 +50,7 @@ namespace SyncTask.ReplicationManagement
             {
                 RaiseErrorMessage("Invalid target directory path. Please try again.");
             }
-            catch (UnauthorizedAccessException e)
+            catch (UnauthorizedAccessException)
             {
                 RaiseErrorMessage("Access denied in initialization.");
             }
@@ -163,7 +163,7 @@ namespace SyncTask.ReplicationManagement
             {
                 RaiseErrorMessage("File has not been found during replication.");
             }
-            catch (UnauthorizedAccessException e)
+            catch (UnauthorizedAccessException)
             {
                 RaiseErrorMessage("Access denied in replication.");
             }
