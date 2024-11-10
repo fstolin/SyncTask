@@ -17,26 +17,48 @@ namespace SyncTask
             LogFilePath = logFilePath;
         }
 
-        public void OnFileChangedEvent(object? sender, LogEventArgs logArgs)
+        public void OnLogEventRaised(object? sender, LogEventArgs logArgs)
         {
             string time = DateTime.Now.ToString("HH:mm:ss");
-            switch (logArgs.MessageType)
+            if (logArgs.ItemType == null)
             {
-                case MessageType.Added:
-                    Console.WriteLine($"[{time}] {logArgs.ItemType} has been added to source directory: {logArgs.Path}");
-                    break;
-                case MessageType.Changed:
-
-                    break;
-                case MessageType.Removed:
-                    Console.WriteLine($"[{time}] Removed {logArgs.ItemType} from replica: {logArgs.Path} - {logArgs.ItemType} is not present in the source directory.");
-                    break;
-                case MessageType.Error:
-                    Console.WriteLine("Error!");
-                    break;
+                LogGeneralMessage(logArgs, time);
             }
-            
+            else
+            {
+                LogFileChanged(logArgs, time);
+            }
+
         }
 
+        // Logging of file (item) changed info
+        private void LogFileChanged(LogEventArgs logArgs, string time)
+        {
+            MessageType messageType = logArgs.MessageType;
+            switch (messageType)
+            {
+                case MessageType.Added:
+                    Console.WriteLine($"[{time}] [{messageType}] {logArgs.ItemType} has been added to source directory and copied to replica: {logArgs.Message}");
+                    break;
+                case MessageType.Modified:
+                    Console.WriteLine($"[{time}] [{messageType}] {logArgs.ItemType} has been modified in source and updated in replica: {logArgs.Message}");
+                    break;
+                case MessageType.Removed:
+                    Console.WriteLine($"[{time}] [{messageType}] Removed extra {logArgs.ItemType} from replica: {logArgs.Message}.");
+                    break;
+                case MessageType.Missing:
+                    Console.WriteLine($"[{time}] [{messageType}] {logArgs.ItemType} is missing in replica and was copied from source: {logArgs.Message}");
+                    break;
+                case MessageType.Error:
+                    Console.WriteLine($"[{time}] [{messageType}] Error with {logArgs.ItemType}: {logArgs.Message}");
+                    break;
+            }
+        }
+
+        // Logging of general messages
+        private void LogGeneralMessage(LogEventArgs logArgs, string time)
+        {
+            Console.WriteLine($"[{time}] {logArgs.MessageType}: {logArgs.Message}");
+        }
     }
 }

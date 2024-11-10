@@ -8,10 +8,12 @@ namespace SyncTask.Logging
 {
     public enum MessageType
     {
-        Changed,
+        Modified,
         Added,
         Removed,
-        Error
+        Missing,
+        Error,
+        Info
     }
 
     public enum ItemType
@@ -22,13 +24,13 @@ namespace SyncTask.Logging
 
     public class LogEventArgs : EventArgs
     {
-        public string Path { get; set; }
+        public string Message { get; set; }
         public MessageType MessageType { get; set; }
-        public ItemType ItemType { get; set; }
+        public ItemType? ItemType { get; set; }
 
-        public LogEventArgs(string message, MessageType messageType, ItemType itemType) 
+        public LogEventArgs(string message, MessageType messageType, ItemType? itemType = null) 
         { 
-            Path = message; 
+            Message = message; 
             MessageType = messageType;
             ItemType = itemType;
         }

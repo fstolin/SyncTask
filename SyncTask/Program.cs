@@ -1,10 +1,13 @@
-﻿using SyncTask.ReplicationManagement;
+﻿using SyncTask.Logging;
+using SyncTask.ReplicationManagement;
+using SyncTask.Utils;
 using System.Timers;
 
 namespace SyncTask
 {
     internal class Program
     {
+
         // Change to list to support multiple replications if needed
         private static ReplicationManager replicationManager;
         
@@ -19,34 +22,33 @@ namespace SyncTask
             Console.WriteLine("Enter sourcePath:");
             string sourcePath = Console.ReadLine();
             string targetPath = "D:\\Sandbox\\Backup";
+            
             //Console.WriteLine("Enter logFilePath:");
             string logFilePath = "empty";
             //Console.WriteLine("Enter interval:");
-            float interval = 2.0f;
+            float interval = 10.0f;
 
-            replicationManager = new ReplicationManager(sourcePath, targetPath);
-            LoggingManager logManager = new LoggingManager(logFilePath);
-            replicationManager.ItemChanged += logManager.OnFileChangedEvent;
+            LoggingManager logManager = new LoggingManager(logFilePath);            
 
-            StartSyncTimer(interval);
-
-            if (initSuccesful)
+            if (sourcePath.ToLower() == targetPath.ToLower())
             {
-                Console.WriteLine("Synchronization is active. Press any key to exit.");
-            } 
-            else
-            {
-                Console.WriteLine("Press any key to exit.");
+                logManager.OnLogEventRaised(null, new LogEventArgs("Source path and target path are the same! Press any key to exit.", MessageType.Error));
+                Console.ReadKey();
+                return;
             }
 
+            replicationManager = new ReplicationManager(sourcePath, targetPath);
+            replicationManager.LogMessageSent += logManager.OnLogEventRaised;
+            HashUtils.UtilsLogMessageSent += logManager.OnLogEventRaised;
+
+            replicationManager.InitializeReplication();
+            StartSyncTimer(interval);
             Console.ReadKey();
-            
         }
 
         private static void OnSyncIntervalElapsed(object? source, ElapsedEventArgs e)
         {
             replicationManager.InitializeReplication();
-            Console.WriteLine($"[{e.SignalTime.ToString("HH:mm:ss")}] Folders have been synchronized.");
         }
 
         private static void StartSyncTimer(float interval)
@@ -56,5 +58,6 @@ namespace SyncTask
             syncTimer.AutoReset = true;
             syncTimer.Enabled = true;
         }
+
     }
 }

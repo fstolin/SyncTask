@@ -1,4 +1,5 @@
 ﻿using SyncTask.Logging;
+using SyncTask.Utils;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel.Design;
@@ -12,17 +13,22 @@ namespace SyncTask.ReplicationManagement
 {
     class ReplicationManager
     {
-        public event EventHandler<LogEventArgs>? ItemChanged;
+        public event EventHandler<LogEventArgs>? LogMessageSent;
 
         private readonly string initialSourcePah;
         private readonly string targetPath;
-        private Dictionary<string, string> sourceFilesDictionary;
+        // Keeps the path as key, MD5 has as value, used to compare files
+        private Dictionary<string, string?> sourceFilesDictionary;
+        // Set to keep track of currently active file / directories. Used by
+        // CleanUp / deletion of extra replica files.
+        private HashSet<string> currentSourceFiles;
 
         public ReplicationManager(string sourcePath, string targetPath) 
         {
             initialSourcePah = sourcePath;
             this.targetPath = targetPath;
-            sourceFilesDictionary = new Dictionary<string, string>();
+            sourceFilesDictionary = new Dictionary<string, string?>();
+            currentSourceFiles = new HashSet<string>();
         }
 
         // Initializes the replication process
@@ -30,8 +36,7 @@ namespace SyncTask.ReplicationManagement
         {
             try
             {
-                // Temporary hack
-                sourceFilesDictionary.Clear();
+                currentSourceFiles.Clear();
                 Directory.CreateDirectory(targetPath);
                 ReplicateDirectory(initialSourcePah);
                 CleanUpReplica(targetPath);
@@ -52,8 +57,7 @@ namespace SyncTask.ReplicationManagement
                 Console.WriteLine($"Unexpected error. Please try again. + {e.Message}");
                 throw;
             }
-            // Initialization was succesful, synchronization is in progress.
-            Program.SetInitSuccesful();
+            LogMessageSent?.Invoke(this, new LogEventArgs("Folders have been synchronized.", MessageType.Info));
         }
 
         // Recursively goes through files and subfolders in selectedPath.
@@ -65,8 +69,8 @@ namespace SyncTask.ReplicationManagement
             // Traversing all folders
             foreach (string subFolder in subFolders)
             {
-                HandleDirectoryReplication(subFolder);
-                sourceFilesDictionary.Add(subFolder, Path.GetFileName(subFolder));
+                HandleFolderReplication(subFolder);
+                currentSourceFiles.Add(subFolder);
                 // Traverse next subfolder
                 ReplicateDirectory(subFolder);
             }
@@ -74,8 +78,30 @@ namespace SyncTask.ReplicationManagement
             // Traversing all files
             foreach (string file in files)
             {
-                HandleFileReplication(file);
-                sourceFilesDictionary.Add(file, Path.GetFileName(file));                              
+                string? hash = HashUtils.GetFileHash(file);
+                currentSourceFiles.Add(file);
+
+                if (sourceFilesDictionary.ContainsKey(file) && hash != null)
+                {
+                    // Copy if checksums are different
+                    if (!HashUtils.AreHashesEqual(hash, sourceFilesDictionary[file]))
+                    {
+                        sourceFilesDictionary[file] = hash;
+                        HandleFileReplication(file, MessageType.Modified);
+                    }
+                    // Copy if the file is missing in replica
+                    if (IsMissingInReplica(file))
+                    {
+                        sourceFilesDictionary[file] = hash;
+                        HandleFileReplication(file, MessageType.Missing);
+                    }
+                } 
+                else 
+                {
+                    // Added file in source
+                    sourceFilesDictionary.Add(file, hash);
+                    HandleFileReplication(file, MessageType.Added);
+                }                            
             }
 
         }
@@ -132,19 +158,22 @@ namespace SyncTask.ReplicationManagement
             }
         }
 
-        // Handles replicating files, and keeping their attributes synchronized. This also handles hidden / read-only files.
-        private void HandleFileReplication(string sourceFilePath)
+        // Copies files, and keeps their attributes synchronized. This also handles hidden / read-only files.
+        private void HandleFileReplication(string sourceFilePath, MessageType type)
         {
             FileAttributes sourceFileAttributes = File.GetAttributes(sourceFilePath);
             string targetFilePath = GetAbsoluteTargetPath(sourceFilePath);
 
             try
             {
+                // Copy the file
                 File.SetAttributes(sourceFilePath, FileAttributes.Normal);
                 if (File.Exists(targetFilePath)) File.SetAttributes(targetFilePath, FileAttributes.Normal);
                 File.Copy(sourceFilePath, targetFilePath, true);
                 File.SetAttributes(sourceFilePath, sourceFileAttributes);
                 File.SetAttributes(targetFilePath, sourceFileAttributes);
+                // Raise item changed event
+                RaiseItemChanged(sourceFilePath, type, ItemType.file);
             }
             catch (FileNotFoundException)
             {
@@ -161,8 +190,8 @@ namespace SyncTask.ReplicationManagement
             }
         }
 
-        // Handles replicating directories, and keeping their attributes synchronized. This also handles hidden / read-only directories.
-        private void HandleDirectoryReplication(string sourceDirectoryPath)
+        // Copies directories, and keeps their attributes synchronized. This also handles hidden / read-only directories.
+        private void HandleFolderReplication(string sourceDirectoryPath)
         {
 
             string absoluteTargetPath = GetAbsoluteTargetPath(sourceDirectoryPath);
@@ -192,11 +221,17 @@ namespace SyncTask.ReplicationManagement
         // Returns true if the file is missing from source dictionary, meaning it should be deleted
         private bool ShouldBeRemoved(string targetAbsolutePath)
         {
-            if (sourceFilesDictionary.ContainsKey(GetAbsoluteSourcePath(targetAbsolutePath)))
+            if (currentSourceFiles.Contains(GetAbsoluteSourcePath(targetAbsolutePath)))
             {
                 return false;
             }
             return true;
+        }
+
+        private bool IsMissingInReplica(string sourceAbsolutePath)
+        {
+            string targetAbsolutePath = GetAbsoluteTargetPath(sourceAbsolutePath);
+            return !File.Exists(targetAbsolutePath);
         }
 
         // Converts from original absolute path to absolute path for the target directory
@@ -216,7 +251,7 @@ namespace SyncTask.ReplicationManagement
         // Invokes OnFileChanged event for a directory / file
         private void RaiseItemChanged(string path, MessageType messageType, ItemType itemType)
         {
-            ItemChanged?.Invoke(this, new LogEventArgs(path, messageType, itemType));
+            LogMessageSent?.Invoke(this, new LogEventArgs(path, messageType, itemType));
         }
     }
 }
