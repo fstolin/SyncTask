@@ -30,6 +30,8 @@ namespace SyncTask.ReplicationManagement
         {
             try
             {
+                // Temporary hack
+                SourceFilesDictionary.Clear();
                 Directory.CreateDirectory(TargetPath);
                 ReplicateDirectory(InitialSourcePath);
                 CleanUpReplica(TargetPath);
@@ -44,12 +46,16 @@ namespace SyncTask.ReplicationManagement
             catch (Exception)
             {
                 Console.WriteLine("Unexpected error. Please try again.");
+                throw;
             }
+            // Initialization was succesful, synchronization is in progress.
+            Program.SetInitSuccesful();
         }
 
         // Recursively goes through files and subfolders in selectedPath.
         private void ReplicateDirectory(string sourcePath)
         {
+
             try
             {
                 string[] subFolders = Directory.GetDirectories(sourcePath);
@@ -88,6 +94,7 @@ namespace SyncTask.ReplicationManagement
             catch (Exception)
             {
                 Console.WriteLine("Unexpected error. Please try again.");
+                throw;
             }
         }
 
