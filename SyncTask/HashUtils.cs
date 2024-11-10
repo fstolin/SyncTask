@@ -18,10 +18,24 @@ namespace SyncTask.Utils
         {
             try
             {
+                // File content hash
                 FileStream fileStream = File.OpenRead(path);
                 byte[] hashBytes = md5.ComputeHash(fileStream);
                 fileStream.Close();
-                return BitConverter.ToString(hashBytes).Replace("-", "").ToLower();                
+                string fileHash = BitConverter.ToString(hashBytes).Replace("-", "").ToLower();
+
+                // Metadata hash
+                // Get file metadata
+                FileInfo fileInfo = new FileInfo(path);
+                byte[] metadataBytes = Encoding.UTF8.GetBytes(
+                    fileInfo.CreationTimeUtc.ToString("o") +
+                    fileInfo.LastWriteTimeUtc.ToString("o") +
+                    fileInfo.Attributes.ToString()
+                );
+                byte[] metadataHashBytes = md5.ComputeHash(metadataBytes);
+                string metaHash = BitConverter.ToString(metadataHashBytes).Replace("-", "").ToLower();
+
+                return ($"{fileHash}_{metaHash}");
             }
             catch (FileNotFoundException)
             {
