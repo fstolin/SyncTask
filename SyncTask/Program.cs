@@ -23,10 +23,10 @@ namespace SyncTask
             //Console.WriteLine("Enter interval:");
             float interval = 2.0f;
 
-            StartSyncTimer(interval);
+            
 
             replicationManager = new ReplicationManager(sourcePath, targetPath, logFilePath, interval);
-            replicationManager.InitializeReplication();
+            StartSyncTimer(interval);
 
             if (initSuccesful)
             {
@@ -36,12 +36,15 @@ namespace SyncTask
             {
                 Console.WriteLine("Press any key to exit.");
             }
+
             Console.ReadKey();
+            
         }
 
         private static void OnSyncIntervalElapsed(object? source, ElapsedEventArgs e)
         {
             replicationManager.InitializeReplication();
+            Console.WriteLine($"[{e.SignalTime.ToString("HH:mm:ss")}] Folders have been synchronized.");
         }
 
         private static void StartSyncTimer(float interval)

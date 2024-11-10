@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel.Design;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection.Metadata;
@@ -39,9 +40,13 @@ namespace SyncTask.ReplicationManagement
             catch(IOException) {
                 Console.WriteLine("I/O error. Please try again.");
             }
-            catch (UnauthorizedAccessException)
+            catch (NotSupportedException)
             {
-                Console.WriteLine("Access denied during initialization. Please try again.");
+                Console.WriteLine("Invalid target directory path. Please try again.");
+            }
+            catch (UnauthorizedAccessException e)
+            {
+                Console.WriteLine("Access denied in initialization.");
             }
             catch (Exception)
             {
@@ -55,47 +60,25 @@ namespace SyncTask.ReplicationManagement
         // Recursively goes through files and subfolders in selectedPath.
         private void ReplicateDirectory(string sourcePath)
         {
+            string[] subFolders = Directory.GetDirectories(sourcePath);
+            string[] files = Directory.GetFiles(sourcePath);
 
-            try
+            // Traversing all folders
+            foreach (string subFolder in subFolders)
             {
-                string[] subFolders = Directory.GetDirectories(sourcePath);
-                string[] files = Directory.GetFiles(sourcePath);
+                HandleDirectoryReplication(subFolder);
+                SourceFilesDictionary.Add(subFolder, Path.GetFileName(subFolder));
+                // Traverse next subfolder
+                ReplicateDirectory(subFolder);
+            }
 
-                // Traversing all folders
-                foreach (string subFolder in subFolders)
-                {
-                    Directory.CreateDirectory(GetAbsoluteTargetPath(subFolder));
-                    SourceFilesDictionary.Add(subFolder, Path.GetFileName(subFolder));
+            // Traversing all files
+            foreach (string file in files)
+            {
+                HandleFileReplication(file);
+                SourceFilesDictionary.Add(file, Path.GetFileName(file));                              
+            }
 
-                    // Traverse next subfolder
-                    ReplicateDirectory(subFolder);
-                }
-
-                // Traversing all files
-                foreach (string file in files)
-                {
-                    string newFilePath = GetAbsoluteTargetPath(file);
-                    File.Copy(file, newFilePath, true);
-                    SourceFilesDictionary.Add(file, Path.GetFileName(file));
-                }
-            }
-            catch (DirectoryNotFoundException)
-            {
-                Console.WriteLine("The source directory doesn't exist. Please try again.");
-            }
-            catch (FileNotFoundException)
-            {
-                Console.WriteLine("File has not been found during replication.");
-            }
-            catch (UnauthorizedAccessException)
-            {
-                Console.WriteLine("Access denied. Please try again.");
-            }
-            catch (Exception)
-            {
-                Console.WriteLine("Unexpected error. Please try again.");
-                throw;
-            }
         }
 
         // Deletes files, which are not in the source directory (dictionary).
@@ -123,6 +106,8 @@ namespace SyncTask.ReplicationManagement
                 {
                     if (shouldBeRemoved(file))
                     {
+                        // Enable deletion of read only files
+                        File.SetAttributes(file, FileAttributes.Normal);
                         File.Delete(file);
                     }
                 }
@@ -143,6 +128,63 @@ namespace SyncTask.ReplicationManagement
             {
                 Console.WriteLine("Unexpected error. Please try again.");
             }
+        }
+
+        // Handles replicating files, and keeping their attributes synchronized. This also handles hidden / read-only files.
+        private void HandleFileReplication(string sourceFilePath)
+        {
+            FileAttributes sourceFileAttributes = File.GetAttributes(sourceFilePath);
+            string targetFilePath = GetAbsoluteTargetPath(sourceFilePath);
+
+            try
+            {
+                File.SetAttributes(sourceFilePath, FileAttributes.Normal);
+                if (File.Exists(targetFilePath)) File.SetAttributes(targetFilePath, FileAttributes.Normal);
+                File.Copy(sourceFilePath, targetFilePath, true);
+                File.SetAttributes(sourceFilePath, sourceFileAttributes);
+                File.SetAttributes(targetFilePath, sourceFileAttributes);
+            }
+            catch (FileNotFoundException)
+            {
+                Console.WriteLine("File has not been found during replication.");
+            }
+            catch (UnauthorizedAccessException e)
+            {
+                Console.WriteLine("Access denied in replication.");
+            }
+            catch (Exception)
+            {
+                Console.WriteLine("Unexpected error. Please try again.");
+                throw;
+            }
+        }
+
+        // Handles replicating directories, and keeping their attributes synchronized. This also handles hidden / read-only directories.
+        private void HandleDirectoryReplication(string sourceDirectoryPath)
+        {
+
+            string absoluteTargetPath = GetAbsoluteTargetPath(sourceDirectoryPath);
+            FileAttributes sourceFileAttributes = File.GetAttributes(sourceDirectoryPath);
+
+            try
+            {
+                Directory.CreateDirectory(absoluteTargetPath);
+                File.SetAttributes(absoluteTargetPath, sourceFileAttributes);
+            }
+            catch (DirectoryNotFoundException)
+            {
+                Console.WriteLine("Directory has not been found during replication.");
+            }
+            catch (UnauthorizedAccessException)
+            {
+                Console.WriteLine("Access denied in replication.");
+            }
+            catch (Exception)
+            {
+                Console.WriteLine("Unexpected error. Please try again.");
+                throw;
+            }
+
         }
 
         // Returns true if the file is missing from source dictionary, meaning it should be deleted
