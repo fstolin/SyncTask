@@ -24,7 +24,7 @@ namespace SyncTask
             string targetPath = "D:\\Sandbox\\Backup";
             
             //Console.WriteLine("Enter logFilePath:");
-            string logFilePath = "empty";
+            string logFilePath = "D:\\Sandbox\\Log.txt";
             //Console.WriteLine("Enter interval:");
             float interval = 2.0f;
 
@@ -33,6 +33,12 @@ namespace SyncTask
             if (sourcePath.ToLower() == targetPath.ToLower())
             {
                 logManager.OnLogEventRaised(null, new LogEventArgs("Source path and target path are the same! Press any key to exit.", MessageType.Error));
+                Console.ReadKey();
+                return;
+            }
+            if (logFilePath.StartsWith(targetPath))
+            {
+                logManager.OnLogEventRaised(null, new LogEventArgs("Log path is in target path's directory!", MessageType.Error));
                 Console.ReadKey();
                 return;
             }

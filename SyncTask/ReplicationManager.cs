@@ -44,19 +44,19 @@ namespace SyncTask.ReplicationManagement
                 LogMessageSent?.Invoke(this, new LogEventArgs("Synchronization finished.", MessageType.Info));
             }
             catch(IOException) {
-                Console.WriteLine("I/O error. Please try again.");
+                RaiseErrorMessage("I/O error. Please try again.");
             }
             catch (NotSupportedException)
             {
-                Console.WriteLine("Invalid target directory path. Please try again.");
+                RaiseErrorMessage("Invalid target directory path. Please try again.");
             }
             catch (UnauthorizedAccessException e)
             {
-                Console.WriteLine("Access denied in initialization.");
+                RaiseErrorMessage("Access denied in initialization.");
             }
             catch (Exception e)
             {
-                Console.WriteLine($"Unexpected error. Please try again. + {e.Message}");
+                RaiseErrorMessage($"Unexpected error. Please try again. + {e.Message}");
                 throw;
             }
             
@@ -161,15 +161,15 @@ namespace SyncTask.ReplicationManagement
             }
             catch (FileNotFoundException)
             {
-                Console.WriteLine("File has not been found during replication.");
+                RaiseErrorMessage("File has not been found during replication.");
             }
             catch (UnauthorizedAccessException e)
             {
-                Console.WriteLine("Access denied in replication.");
+                RaiseErrorMessage("Access denied in replication.");
             }
             catch (Exception e)
             {
-                Console.WriteLine($"Unexpected error. Please try again. + {e.Message}");
+                RaiseErrorMessage($"Unexpected error. Please try again. + {e.Message}");
                 throw;
             }
         }
@@ -187,15 +187,15 @@ namespace SyncTask.ReplicationManagement
             }
             catch (DirectoryNotFoundException)
             {
-                Console.WriteLine("Directory has not been found during replication.");
+                RaiseErrorMessage("Directory has not been found during replication.");
             }
             catch (UnauthorizedAccessException)
             {
-                Console.WriteLine("Access denied in replication.");
+                RaiseErrorMessage("Access denied in replication.");
             }
             catch (Exception)
             {
-                Console.WriteLine("Unexpected error. Please try again.");
+                RaiseErrorMessage("Unexpected error. Please try again.");
                 throw;
             }
 
@@ -238,19 +238,19 @@ namespace SyncTask.ReplicationManagement
             }
             catch (DirectoryNotFoundException)
             {
-                Console.WriteLine("The source directory doesn't exist during cleanup. Please try again.");
+                RaiseErrorMessage("The source directory doesn't exist during cleanup. Please try again.");
             }
             catch (FileNotFoundException)
             {
-                Console.WriteLine("File has not been found during cleanup.");
+                RaiseErrorMessage("File has not been found during cleanup.");
             }
             catch (UnauthorizedAccessException)
             {
-                Console.WriteLine("Access denied during cleanup. Please try again.");
+                RaiseErrorMessage("Access denied during cleanup. Please try again.");
             }
             catch (Exception e)
             {
-                Console.WriteLine($"Unexpected error. Please try again. + {e.Message}");
+                RaiseErrorMessage($"Unexpected error. Please try again. + {e.Message}");
             }
         }
 
@@ -321,6 +321,11 @@ namespace SyncTask.ReplicationManagement
         private void RaiseItemChanged(string path, MessageType messageType, ItemType itemType)
         {
             LogMessageSent?.Invoke(this, new LogEventArgs(path, messageType, itemType));
+        }
+
+        private void RaiseErrorMessage(string message)
+        {
+            LogMessageSent?.Invoke(this, new LogEventArgs(message, MessageType.Error));
         }
         private bool IsMissingInReplica(string sourceAbsolutePath)
         {

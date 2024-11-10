@@ -10,13 +10,35 @@ namespace SyncTask
     class LoggingManager
     {
         
-        private readonly string LogFilePath;
+        private readonly string logFilePath;
+        private readonly StreamWriter? streamWriter;
 
         public LoggingManager(string logFilePath)
         {
-            LogFilePath = logFilePath;
+            this.logFilePath = logFilePath;
+
+            try
+            {
+                // Create the directory
+                string? directoryPath = Path.GetDirectoryName(logFilePath);
+                if (directoryPath == null) return;
+                Directory.CreateDirectory(directoryPath);
+
+                // Create or open the file
+                FileStream fileStream = new FileStream(logFilePath, FileMode.OpenOrCreate, FileAccess.ReadWrite, FileShare.ReadWrite);
+                streamWriter = new StreamWriter(fileStream);
+            }
+            catch (IOException)
+            {
+                Console.WriteLine("IO exception while instancing streamWriter");
+            }
+            catch (Exception e) 
+            {
+                Console.WriteLine($"Exception while instancing streamWriter: {e.Message}");
+            }
         }
 
+        // Decides whether to log regular message or a message concerning a file / directory change.
         public void OnLogEventRaised(object? sender, LogEventArgs logArgs)
         {
             string time = DateTime.Now.ToString("HH:mm:ss");
@@ -31,27 +53,49 @@ namespace SyncTask
 
         }
 
-        // Logging of file (item) changed info
+        // Decide on the logging message from the event args. Log in console / call for logging in file
         private void LogFileChanged(LogEventArgs logArgs, string time)
         {
             MessageType messageType = logArgs.MessageType;
+            string message;
+
             switch (messageType)
             {
                 case MessageType.Added:
-                    Console.WriteLine($"[{time}] [{messageType}] {logArgs.ItemType} has been added to source directory and copied to replica: {logArgs.Message}");
+                    message = ($"[{time}] [{messageType}] {logArgs.ItemType} has been added to source directory and copied to replica: {logArgs.Message}");
                     break;
                 case MessageType.Modified:
-                    Console.WriteLine($"[{time}] [{messageType}] Modified {logArgs.ItemType} was updated to match source: {logArgs.Message}");
+                    message = ($"[{time}] [{messageType}] Modified {logArgs.ItemType} was updated to match source: {logArgs.Message}");
                     break;
                 case MessageType.Removed:
-                    Console.WriteLine($"[{time}] [{messageType}] Removed extra {logArgs.ItemType} from replica: {logArgs.Message}.");
+                    message = ($"[{time}] [{messageType}] Removed extra {logArgs.ItemType} from replica: {logArgs.Message}.");
                     break;
                 case MessageType.Missing:
-                    Console.WriteLine($"[{time}] [{messageType}] {logArgs.ItemType} was missing in replica: {logArgs.Message}");
+                    message = ($"[{time}] [{messageType}] {logArgs.ItemType} was missing in replica: {logArgs.Message}");
                     break;
                 case MessageType.Error:
-                    Console.WriteLine($"[{time}] [{messageType}] Error with {logArgs.ItemType}: {logArgs.Message}");
+                    message = ($"[{time}] [{messageType}] Error with {logArgs.ItemType}: {logArgs.Message}");
                     break;
+                default:
+                    message = ($"[{time}] [Unknown] {logArgs.Message}");
+                    break;
+            }
+
+            Console.WriteLine(message);
+            LogToFile(message);
+        }
+
+        // Log a message into log file
+        private void LogToFile(string message)
+        {
+            if (streamWriter != null)
+            {
+                streamWriter.WriteLine(message);
+                streamWriter.Flush();
+            }
+            else
+            {
+                Console.WriteLine("Error writing to log file. Log file is null.");
             }
         }
 
