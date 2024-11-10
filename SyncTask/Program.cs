@@ -26,7 +26,7 @@ namespace SyncTask
             //Console.WriteLine("Enter logFilePath:");
             string logFilePath = "empty";
             //Console.WriteLine("Enter interval:");
-            float interval = 10.0f;
+            float interval = 2.0f;
 
             LoggingManager logManager = new LoggingManager(logFilePath);            
 

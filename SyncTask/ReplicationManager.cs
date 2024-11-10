@@ -40,6 +40,8 @@ namespace SyncTask.ReplicationManagement
                 Directory.CreateDirectory(targetPath);
                 ReplicateDirectory(initialSourcePah);
                 CleanUpReplica(targetPath);
+                CleanUpSourceDictionary();
+                LogMessageSent?.Invoke(this, new LogEventArgs("Synchronization finished.", MessageType.Info));
             }
             catch(IOException) {
                 Console.WriteLine("I/O error. Please try again.");
@@ -57,7 +59,7 @@ namespace SyncTask.ReplicationManagement
                 Console.WriteLine($"Unexpected error. Please try again. + {e.Message}");
                 throw;
             }
-            LogMessageSent?.Invoke(this, new LogEventArgs("Folders have been synchronized.", MessageType.Info));
+            
         }
 
         // Recursively goes through files and subfolders in selectedPath.
@@ -69,8 +71,19 @@ namespace SyncTask.ReplicationManagement
             // Traversing all folders
             foreach (string subFolder in subFolders)
             {
-                HandleFolderReplication(subFolder);
+                if (IsDirectoryMissingInReplica(subFolder))
+                {
+                    HandleFolderReplication(subFolder);
+                    RaiseItemChanged(subFolder, MessageType.Added, ItemType.folder);
+                } 
+                else if (!AreAttributesEqual(subFolder))
+                {
+                    HandleFolderReplication(subFolder);
+                    RaiseItemChanged(subFolder, MessageType.Modified, ItemType.folder);
+                }
+                
                 currentSourceFiles.Add(subFolder);
+
                 // Traverse next subfolder
                 ReplicateDirectory(subFolder);
             }
@@ -81,29 +94,38 @@ namespace SyncTask.ReplicationManagement
                 string? hash = HashUtils.GetFileHash(file);
                 currentSourceFiles.Add(file);
 
-                if (sourceFilesDictionary.ContainsKey(file) && hash != null)
+                // Added a new file - if it wasn't in dictionary
+                if (!sourceFilesDictionary.ContainsKey(file))
                 {
-                    // Copy if checksums are different
-                    if (!HashUtils.AreHashesEqual(hash, sourceFilesDictionary[file]))
-                    {
-                        sourceFilesDictionary[file] = hash;
-                        HandleFileReplication(file, MessageType.Modified);
-                    }
-                    // Copy if the file is missing in replica
-                    if (IsMissingInReplica(file))
-                    {
-                        sourceFilesDictionary[file] = hash;
-                        HandleFileReplication(file, MessageType.Missing);
-                    }
-                } 
-                else 
-                {
-                    // Added file in source
                     sourceFilesDictionary.Add(file, hash);
                     HandleFileReplication(file, MessageType.Added);
-                }                            
+                }
+                // Update a modified file (content / metadata)
+                else if (hash != null && !HashUtils.AreHashesEqual(hash, sourceFilesDictionary[file]))
+                {
+                    sourceFilesDictionary[file] = hash;
+                    HandleFileReplication(file, MessageType.Modified);
+                }
+                // Copy a file missing in replica. We know that the file is in dictionary
+                // (should be in replica) due to the first condition
+                else if (IsMissingInReplica(file))
+                {
+                    sourceFilesDictionary[file] = hash;
+                    HandleFileReplication(file, MessageType.Missing);
+                }
+                // Update a file when attributes are changed only in the replica
+                else if (!AreAttributesEqual(file))
+                {
+                    sourceFilesDictionary[file] = hash;
+                    HandleFileReplication(file, MessageType.Modified);
+                }
+                // Update a file when the content is changed only in the replica
+                else if (!IsTargetHashEqual(file))
+                {
+                    sourceFilesDictionary[file] = hash;
+                    HandleFileReplication(file, MessageType.Modified);
+                }
             }
-
         }
 
         // Deletes files, which are not in the source directory (dictionary).
@@ -158,6 +180,18 @@ namespace SyncTask.ReplicationManagement
             }
         }
 
+        // At the end of synchronization: Removes removed files in source directory from the dictionary.
+        private void CleanUpSourceDictionary()
+        {
+            foreach (string item in sourceFilesDictionary.Keys)
+            {
+                if (!currentSourceFiles.Contains(item))
+                {
+                    sourceFilesDictionary.Remove(item);
+                }
+            }
+        }
+
         // Copies files, and keeps their attributes synchronized. This also handles hidden / read-only files.
         private void HandleFileReplication(string sourceFilePath, MessageType type)
         {
@@ -193,7 +227,6 @@ namespace SyncTask.ReplicationManagement
         // Copies directories, and keeps their attributes synchronized. This also handles hidden / read-only directories.
         private void HandleFolderReplication(string sourceDirectoryPath)
         {
-
             string absoluteTargetPath = GetAbsoluteTargetPath(sourceDirectoryPath);
             FileAttributes sourceFileAttributes = File.GetAttributes(sourceDirectoryPath);
 
@@ -232,6 +265,39 @@ namespace SyncTask.ReplicationManagement
         {
             string targetAbsolutePath = GetAbsoluteTargetPath(sourceAbsolutePath);
             return !File.Exists(targetAbsolutePath);
+        }
+
+        private bool IsDirectoryMissingInReplica(string sourceAbsolutePath)
+        {
+            string targetAbsolutePath = GetAbsoluteTargetPath(sourceAbsolutePath);
+            return !Directory.Exists(targetAbsolutePath);
+        }
+
+        private bool AreAttributesEqual(string sourceAbsolutePath)
+        {
+            string targetAbsolutePath = GetAbsoluteTargetPath(sourceAbsolutePath);
+            FileAttributes sourceAttributes = File.GetAttributes(sourceAbsolutePath);
+            FileAttributes targetAttributes = File.GetAttributes(targetAbsolutePath);
+            return sourceAttributes.Equals(targetAttributes);
+        }
+
+        // Compares a hash to a generated hash of the file in the replica (simple hash only - no metada)
+        private bool IsTargetHashEqual(string sourcePath)
+        {
+            string targetAbsolutePath = GetAbsoluteTargetPath(sourcePath);
+            string? targetHash = HashUtils.GetFileHash(targetAbsolutePath, true);
+            string? hash = HashUtils.GetFileHash(sourcePath, true);
+            if (targetHash == null || hash == null)
+            {
+                return false;
+            }
+            if (HashUtils.AreHashesEqual(hash, targetHash))
+            {
+                return true;
+            } else
+            {
+                return false;
+            }
         }
 
         // Converts from original absolute path to absolute path for the target directory

@@ -41,13 +41,13 @@ namespace SyncTask
                     Console.WriteLine($"[{time}] [{messageType}] {logArgs.ItemType} has been added to source directory and copied to replica: {logArgs.Message}");
                     break;
                 case MessageType.Modified:
-                    Console.WriteLine($"[{time}] [{messageType}] {logArgs.ItemType} has been modified in source and updated in replica: {logArgs.Message}");
+                    Console.WriteLine($"[{time}] [{messageType}] Modified {logArgs.ItemType} was updated to match source: {logArgs.Message}");
                     break;
                 case MessageType.Removed:
                     Console.WriteLine($"[{time}] [{messageType}] Removed extra {logArgs.ItemType} from replica: {logArgs.Message}.");
                     break;
                 case MessageType.Missing:
-                    Console.WriteLine($"[{time}] [{messageType}] {logArgs.ItemType} is missing in replica and was copied from source: {logArgs.Message}");
+                    Console.WriteLine($"[{time}] [{messageType}] {logArgs.ItemType} was missing in replica: {logArgs.Message}");
                     break;
                 case MessageType.Error:
                     Console.WriteLine($"[{time}] [{messageType}] Error with {logArgs.ItemType}: {logArgs.Message}");
@@ -58,7 +58,7 @@ namespace SyncTask
         // Logging of general messages
         private void LogGeneralMessage(LogEventArgs logArgs, string time)
         {
-            Console.WriteLine($"[{time}] {logArgs.MessageType}: {logArgs.Message}");
+            Console.WriteLine($"[{time}] [{logArgs.MessageType}] {logArgs.Message}");
         }
     }
 }

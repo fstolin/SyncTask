@@ -14,7 +14,8 @@ namespace SyncTask.Utils
         public static event EventHandler<LogEventArgs>? UtilsLogMessageSent;
         private static readonly MD5 md5 = MD5.Create();
 
-        public static string? GetFileHash(string path)
+        // Returns a hash for file content & metadata, or only file content with simple argument.
+        public static string? GetFileHash(string path, bool simple = false)
         {
             try
             {
@@ -24,18 +25,25 @@ namespace SyncTask.Utils
                 fileStream.Close();
                 string fileHash = BitConverter.ToString(hashBytes).Replace("-", "").ToLower();
 
-                // Metadata hash
-                // Get file metadata
-                FileInfo fileInfo = new FileInfo(path);
-                byte[] metadataBytes = Encoding.UTF8.GetBytes(
-                    fileInfo.CreationTimeUtc.ToString("o") +
-                    fileInfo.LastWriteTimeUtc.ToString("o") +
-                    fileInfo.Attributes.ToString()
-                );
-                byte[] metadataHashBytes = md5.ComputeHash(metadataBytes);
-                string metaHash = BitConverter.ToString(metadataHashBytes).Replace("-", "").ToLower();
+                if (!simple)
+                {
+                    // Metadata hash
+                    // Get file metadata
+                    FileInfo fileInfo = new FileInfo(path);
+                    byte[] metadataBytes = Encoding.UTF8.GetBytes(
+                        fileInfo.CreationTimeUtc.ToString("o") +
+                        fileInfo.LastWriteTimeUtc.ToString("o") +
+                        fileInfo.Attributes.ToString()
+                    );
+                    byte[] metadataHashBytes = md5.ComputeHash(metadataBytes);
+                    string metaHash = BitConverter.ToString(metadataHashBytes).Replace("-", "").ToLower();
+                    return ($"{fileHash}_{metaHash}");
+                } else
+                {
+                    return fileHash;
+                }
 
-                return ($"{fileHash}_{metaHash}");
+                
             }
             catch (FileNotFoundException)
             {
