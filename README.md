@@ -2,6 +2,7 @@
  Folder synchronization task for a job application by Filip Stolin. This program synchronizes the source directory to replica directory in a one-way manner and logs changes to the specified log file. The synchronization runs periodically in interval set by the arguments.
 
  ## Features
+  - Files are synced only when needed.
   - Single recursive directory traversal for each source and replica directory every sync.
   - MD5 file content change detection.
   - Attribute change detection for files & folders.
