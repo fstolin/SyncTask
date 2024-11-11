@@ -21,14 +21,14 @@ namespace SyncTask.ReplicationManagement
         private Dictionary<string, string?> sourceFilesDictionary;
         // Set to keep track of currently active file / directories. Used by
         // CleanUp / deletion of extra replica files.
-        private HashSet<string> currentSourceFiles;
+        private HashSet<string> currentSourceFilesSet;
 
         public ReplicationManager(string sourcePath, string targetPath) 
         {
             initialSourcePah = sourcePath;
             this.targetPath = targetPath;
             sourceFilesDictionary = new Dictionary<string, string?>();
-            currentSourceFiles = new HashSet<string>();
+            currentSourceFilesSet = new HashSet<string>();
         }
 
         // Initializes the replication process
@@ -36,12 +36,14 @@ namespace SyncTask.ReplicationManagement
         {
             try
             {
-                currentSourceFiles.Clear();
+                Program.isSyncing = true;
+                currentSourceFilesSet.Clear();
                 Directory.CreateDirectory(targetPath);
                 ReplicateDirectory(initialSourcePah);
                 CleanUpReplica(targetPath);
                 CleanUpSourceDictionary();
                 LogMessageSent?.Invoke(this, new LogEventArgs("Synchronization finished.", MessageType.Info));
+                Program.isSyncing = false;
             }
             catch(IOException) {
                 RaiseErrorMessage("I/O error. Please try again.");
@@ -72,7 +74,7 @@ namespace SyncTask.ReplicationManagement
             foreach (string subFolder in subFolders)
             {
                 ProcessDirectory(subFolder);                
-                currentSourceFiles.Add(subFolder);
+                currentSourceFilesSet.Add(subFolder);
 
                 // Traverse next subfolder
                 ReplicateDirectory(subFolder);
@@ -89,7 +91,7 @@ namespace SyncTask.ReplicationManagement
         private void ProcessFile(string file) 
         {
             string? hash = HashUtils.GetFileHash(file);
-            currentSourceFiles.Add(file);
+            currentSourceFilesSet.Add(file);
 
             // Added a new file - if it wasn't in dictionary
             if (!sourceFilesDictionary.ContainsKey(file))
@@ -259,7 +261,7 @@ namespace SyncTask.ReplicationManagement
         {
             foreach (string item in sourceFilesDictionary.Keys)
             {
-                if (!currentSourceFiles.Contains(item))
+                if (!currentSourceFilesSet.Contains(item))
                 {
                     sourceFilesDictionary.Remove(item);
                 }
@@ -269,7 +271,7 @@ namespace SyncTask.ReplicationManagement
         // Returns true if the file is missing from source dictionary, meaning it should be deleted
         private bool ShouldBeRemoved(string targetAbsolutePath)
         {
-            if (currentSourceFiles.Contains(GetAbsoluteSourcePath(targetAbsolutePath)))
+            if (currentSourceFilesSet.Contains(GetAbsoluteSourcePath(targetAbsolutePath)))
             {
                 return false;
             }
