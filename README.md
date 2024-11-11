@@ -20,7 +20,7 @@
  ## Example usage
  Syntax
  ```bash
-dotnet run -- <source-path> <target-path> <log-file-path> [<interval>]
+dotnet run -- <source-path> <replica-path> <log-file-path> [<interval>]
  ```
 Run synchronization each 5 seconds
  ```bash
