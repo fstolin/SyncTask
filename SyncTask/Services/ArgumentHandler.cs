@@ -8,6 +8,7 @@ namespace SyncTask.ArgumentHandling
     public class ArgumentHandler
     {
 
+        private const float DefaultSyncInterval = 10.0f;
         private string[] args;
 
         public ArgumentHandler(string[] args)
@@ -28,9 +29,9 @@ namespace SyncTask.ArgumentHandling
                 args[0],
                 args[1],
                 args[2],
-                Utils.TryConvertToFloat(args[3]));
+                GetFinalSyncInterval());
 
-            if (AreArgumentsValid(arguments))
+            if (Utils.AreArgumentsValid(arguments))
             {
                 return arguments;
             }
@@ -38,15 +39,6 @@ namespace SyncTask.ArgumentHandling
             {
                 throw new InvalidCmdParametersException();
             }
-        }
-
-        private bool AreArgumentsValid(Arguments args)
-        {
-            if (ArePathsValid(args) && args.Interval != 0)
-            {
-                return true;
-            }
-            return false;
         }
 
         private bool IsNumberOfArgumentsValid()
@@ -60,20 +52,16 @@ namespace SyncTask.ArgumentHandling
             return true;
         }
 
-        private bool ArePathsValid(Arguments args)
+        private float GetFinalSyncInterval()
         {
-
-            if (args.SourcePath.ToLower() == args.TargetPath.ToLower())
+            if (args.Length == 4)
             {
-                Console.Write("Source path and target path are the same! ");
-                return false;
+                return Utils.TryConvertToFloat(args[3]);
             }
-            else if (args.LogFilePath.StartsWith(args.TargetPath))
+            else
             {
-                Console.Write("Log path is in target path's directory! ");
-                return false;
+                return DefaultSyncInterval;
             }
-            return true;
         }
     }
 }
