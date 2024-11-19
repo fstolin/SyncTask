@@ -9,7 +9,7 @@ using System.Reflection.Metadata;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace SyncTask.ReplicationManagement
+namespace SyncTask.Services
 {
     class ReplicationManager
     {
@@ -36,14 +36,12 @@ namespace SyncTask.ReplicationManagement
         {
             try
             {
-                Program.isSyncing = true;
                 currentSourceFilesSet.Clear();
                 Directory.CreateDirectory(targetPath);
                 ReplicateDirectory(initialSourcePah);
                 CleanUpReplica(targetPath);
                 CleanUpSourceDictionary();
                 LogMessageSent?.Invoke(this, new LogEventArgs("Synchronization finished.", MessageType.Info));
-                Program.isSyncing = false;
             }
             catch(IOException) {
                 RaiseErrorMessage("I/O error. Please try again.");
