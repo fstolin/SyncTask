@@ -1,6 +1,6 @@
 ﻿using SyncTask.Logging;
 using SyncTask.Structs;
-using SyncTask.Utils;
+using SyncTask.Utilities;
 
 namespace SyncTask.Services
 {

@@ -1,8 +1,5 @@
-﻿using SyncTask.Logging;
-using SyncTask.ArgumentHandling;
-using SyncTask.Utils;
+﻿using SyncTask.ArgumentHandling;
 using SyncTask.Services;
-using System.Timers;
 using SyncTask.Exceptions;
 
 namespace SyncTask

@@ -1,13 +1,5 @@
 ﻿using SyncTask.Logging;
-using SyncTask.Utils;
-using System;
-using System.Collections.Generic;
-using System.ComponentModel.Design;
-using System.Linq;
-using System.Linq.Expressions;
-using System.Reflection.Metadata;
-using System.Text;
-using System.Threading.Tasks;
+using SyncTask.Utilities;
 
 namespace SyncTask.Services
 {

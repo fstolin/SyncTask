@@ -1,5 +1,6 @@
 ﻿using SyncTask.Structs;
 using SyncTask.Exceptions;
+using SyncTask.Utilities;
 
 namespace SyncTask.ArgumentHandling
 {
@@ -27,7 +28,7 @@ namespace SyncTask.ArgumentHandling
                 args[0],
                 args[1],
                 args[2],
-                TryConvertToFloat(args[3]));
+                Utils.TryConvertToFloat(args[3]));
 
             if (AreArgumentsValid(arguments))
             {
@@ -73,27 +74,6 @@ namespace SyncTask.ArgumentHandling
                 return false;
             }
             return true;
-        }
-
-        // TODO move to utils
-        private float TryConvertToFloat(object value)
-        {
-            try
-            {
-                return Convert.ToSingle(value);
-            }
-            catch (FormatException) 
-            {
-                Console.WriteLine("[Error] Object cannot be converted to float.");
-                throw new FormatException();
-            }
-        }
-
-        // TODO move to utils
-        private static void TerminateProgram()
-        {
-            Console.WriteLine("Press any key to exit.");
-            Console.ReadKey();
         }
     }
 }
