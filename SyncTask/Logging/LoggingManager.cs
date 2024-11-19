@@ -1,15 +1,8 @@
-﻿using SyncTask.Logging;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace SyncTask
+﻿namespace SyncTask.Logging
 {
     class LoggingManager
     {
-        
+
         private readonly string logFilePath;
         private readonly StreamWriter? streamWriter;
 
@@ -32,7 +25,7 @@ namespace SyncTask
             {
                 Console.WriteLine("IO exception while instancing streamWriter");
             }
-            catch (Exception e) 
+            catch (Exception e)
             {
                 Console.WriteLine($"Exception while instancing streamWriter: {e.Message}");
             }
@@ -62,22 +55,22 @@ namespace SyncTask
             switch (messageType)
             {
                 case MessageType.Added:
-                    message = ($"[{time}] [{messageType}] {logArgs.ItemType} has been added to source directory and copied to replica: {logArgs.Message}");
+                    message = $"[{time}] [{messageType}] {logArgs.ItemType} has been added to source directory and copied to replica: {logArgs.Message}";
                     break;
                 case MessageType.Modified:
-                    message = ($"[{time}] [{messageType}] Modified {logArgs.ItemType} was updated to match source: {logArgs.Message}");
+                    message = $"[{time}] [{messageType}] Modified {logArgs.ItemType} was updated to match source: {logArgs.Message}";
                     break;
                 case MessageType.Removed:
-                    message = ($"[{time}] [{messageType}] Removed extra {logArgs.ItemType} from replica: {logArgs.Message}.");
+                    message = $"[{time}] [{messageType}] Removed extra {logArgs.ItemType} from replica: {logArgs.Message}.";
                     break;
                 case MessageType.Missing:
-                    message = ($"[{time}] [{messageType}] {logArgs.ItemType} was missing in replica: {logArgs.Message}");
+                    message = $"[{time}] [{messageType}] {logArgs.ItemType} was missing in replica: {logArgs.Message}";
                     break;
                 case MessageType.Error:
-                    message = ($"[{time}] [{messageType}] Error with {logArgs.ItemType}: {logArgs.Message}");
+                    message = $"[{time}] [{messageType}] Error with {logArgs.ItemType}: {logArgs.Message}";
                     break;
                 default:
-                    message = ($"[{time}] [Unknown] {logArgs.Message}");
+                    message = $"[{time}] [Unknown] {logArgs.Message}";
                     break;
             }
 

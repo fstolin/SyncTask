@@ -16,7 +16,7 @@
  4. **interval** [s] - Optional. Synchronization interval in seconds, default value is 10 seconds.
 
  ## Controls
- - Press any key to exit the synchronization process at any time.
+ - Press any key to exit on the next synchronization interval.
 
  ## Example usage
  Syntax
