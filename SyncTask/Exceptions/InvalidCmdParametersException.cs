@@ -4,9 +4,11 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace SyncTask
+namespace SyncTask.Exceptions
 {
-    internal class InvalidCmdParametersException
+    public class InvalidCmdParametersException : Exception
     {
+        public InvalidCmdParametersException() : base("Invalid command line parameters.") { }
     }
+
 }

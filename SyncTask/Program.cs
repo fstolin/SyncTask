@@ -16,10 +16,11 @@ namespace SyncTask
             {
                 ArgumentHandler argumentHandler = new ArgumentHandler(args);
                 SyncRuntimeManager syncRuntimeManager = new SyncRuntimeManager(argumentHandler.GetValidArguments());
+                syncRuntimeManager.StartSyncing();
             }
             catch (InvalidCmdParametersException)
             {
-                Console.WriteLine("Error starting the synchronization.");
+                Console.WriteLine("Error starting the synchronization. Press any key to exit.");
                 Console.ReadKey();
             }
         }

@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "SyncTask": {
+      "commandName": "Project",
+      "commandLineArgs": "D:\\Sandbox\\Temp D:\\Sandbox\\Backup D:\\Sandbox\\log.txt 5"
+    }
+  }
+}
