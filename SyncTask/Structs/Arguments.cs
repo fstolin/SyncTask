@@ -1,4 +1,6 @@
-﻿namespace SyncTask.Structs
+﻿using System.Text;
+
+namespace SyncTask.Structs
 {
     public struct Arguments
     {
@@ -14,6 +16,14 @@
             TargetPath = targetPath;
             LogFilePath = logFilePath;
             Interval = interval;
+        }
+
+        public override string ToString()
+        {
+            return ($"Source: {SourcePath}\n" +
+                    $"Target: {TargetPath}\n" +
+                    $"LogPath: {LogFilePath}\n" +
+                    $"Interval: {Interval}");
         }
     }
 }

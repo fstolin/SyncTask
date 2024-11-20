@@ -9,7 +9,7 @@ namespace SyncTask.ArgumentHandling
     {
 
         private const float DefaultSyncInterval = 10.0f;
-        private string[] args;
+        private readonly string[] args;
 
         public ArgumentHandler(string[] args)
         {

@@ -4,21 +4,20 @@ using SyncTask.Exceptions;
 using SyncTask.Structs;
 using SyncTask.Utilities;
 
-namespace SyncTaskTests;
+namespace SyncTaskTests.Utilities;
 
 [TestFixture]
 public class UtilsTests
 {
+    #region Tests for method TryConvertToFloat
+
     [TestCase("5", 5f)]
     [TestCase("3.48", 3.48f)]
     [TestCase("5.00000006", 5.00000006f)]
     [TestCase("5,48", 5.48f)]
     public void TryConvertToFloat_ShouldReturnCorrectFloat_ForValidNumbers(string input, float expected)
     {
-        // Arrange
-        // Act
         float result = Utils.TryConvertToFloat(input);
-        // Assert
         Assert.AreEqual(expected, result);
     }
 
@@ -30,21 +29,10 @@ public class UtilsTests
         Assert.Throws<FormatException>(() => Utils.TryConvertToFloat(input));
     }
 
-    [TestCaseSource(nameof(AreArgumentsValid_ValidTestCases))]
-    public void AreArgumentsValid_ShouldReturnTrue_ForValidArguments(Arguments arguments)
-    {
-        bool result = Utils.AreArgumentsValid(arguments);
-        Assert.IsTrue(result);
-    }
-    
-    [TestCaseSource(nameof(AreArgumentsValid_InvalidTestCases))]
-    public void AreArgumentsValid_ShouldReturnFalse_ForInvalidArguments(Arguments arguments)
-    {
-        bool result = Utils.AreArgumentsValid(arguments);
-        Assert.IsFalse(result);
-    }
+    #endregion
 
-    // TEST CASE SOURCES
+    #region Tests for method AreArgumentsValid
+
     private static IEnumerable<object> AreArgumentsValid_ValidTestCases()
     {
         return
@@ -54,9 +42,16 @@ public class UtilsTests
         ];
     }
 
+    [TestCaseSource(nameof(AreArgumentsValid_ValidTestCases))]
+    public void AreArgumentsValid_ShouldReturnTrue_ForValidArguments(Arguments arguments)
+    {
+        bool result = Utils.AreArgumentsValid(arguments);
+        Assert.IsTrue(result);
+    }
+
     private static IEnumerable<object> AreArgumentsValid_InvalidTestCases()
     {
-        return 
+        return
         [
             new object[] { new Arguments("D:\\Sandbox\\Temp", "D:\\sandbox\\Temp", "D:\\Sandbox\\log.txt", 5) },    // Same source & target folder
             new object[] { new Arguments("D:\\Sandbox\\Temp", "D:\\Sandbox\\Backup", "D:\\Sandbox\\log.txt", -8) },  // Negative interval
@@ -65,5 +60,14 @@ public class UtilsTests
             new object[] { new Arguments("D:\\Sandbox\\Temp", "D:\\Sandbox\\Backup", "D:\\Sandbox\\Backup\\Logging\\log.txt", 5) }    // Log inside target folder
         ];
     }
+
+    [TestCaseSource(nameof(AreArgumentsValid_InvalidTestCases))]
+    public void AreArgumentsValid_ShouldReturnFalse_ForInvalidArguments(Arguments arguments)
+    {
+        bool result = Utils.AreArgumentsValid(arguments);
+        Assert.IsFalse(result);
+    }
+
+    #endregion
 
 }
