@@ -6,7 +6,8 @@ using System.Threading.Tasks;
 
 namespace SyncTask.Interfaces
 {
-    internal class IUserInputChecker
+    public interface IUserInputChecker
     {
+        bool UserPressedKey();
     }
 }

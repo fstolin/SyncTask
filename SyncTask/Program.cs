@@ -12,7 +12,7 @@ namespace SyncTask
             try
             {
                 ArgumentHandler argumentHandler = new ArgumentHandler(args);
-                SyncRuntimeManager syncRuntimeManager = new SyncRuntimeManager(argumentHandler.GetValidArguments());
+                SyncRuntimeManager syncRuntimeManager = new SyncRuntimeManager(argumentHandler.GetValidArguments(), new ConsoleUserInputChecker());
                 syncRuntimeManager.StartSyncing();
             }
             catch (InvalidCmdParametersException)
