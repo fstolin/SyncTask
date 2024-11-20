@@ -1,0 +1,8 @@
+services:
+  synctask:
+    image: synctask
+    volumes:
+      - D:/Dockerbox/Source:/app/source
+      - D:/Dockerbox/Target:/app/target
+      - D:/Dockerbox/:/app/logs
+    entrypoint: ["dotnet", "SyncTask.dll", "/app/source", "/app/target", "/app/logs/log.txt", "5"]

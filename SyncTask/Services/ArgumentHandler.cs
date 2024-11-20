@@ -33,6 +33,7 @@ namespace SyncTask.ArgumentHandling
 
             if (Utils.AreArgumentsValid(arguments))
             {
+                Console.WriteLine(arguments.ToString());
                 return arguments;
             }
             else

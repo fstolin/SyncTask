@@ -17,8 +17,7 @@ namespace SyncTask
             }
             catch (InvalidCmdParametersException)
             {
-                Console.WriteLine("Error starting the synchronization. Press any key to exit.");
-                Console.ReadKey(true);
+                Console.WriteLine("Error starting the synchronization.");
             }
         }
     }

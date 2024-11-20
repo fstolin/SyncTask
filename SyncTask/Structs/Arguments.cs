@@ -4,7 +4,7 @@ namespace SyncTask.Structs
 {
     public struct Arguments
     {
-
+        
         public string SourcePath { get; }
         public string TargetPath { get; }
         public string LogFilePath { get; }

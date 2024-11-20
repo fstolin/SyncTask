@@ -23,12 +23,6 @@ namespace SyncTask.Services
 
             while (true)
             {
-                // Check if a key has been pressed
-                if (Console.KeyAvailable)
-                {
-                    Console.ReadKey(true);
-                    break; 
-                }
                 replicationManager!.InitializeReplication();
                 Thread.Sleep(Convert.ToInt32(args.Interval*1000));
             }
