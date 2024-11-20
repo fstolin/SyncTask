@@ -4,5 +4,5 @@ services:
     volumes:
       - D:/Dockerbox/Source:/app/source
       - D:/Dockerbox/Target:/app/target
-      - D:/Dockerbox/:/app/logs
-    entrypoint: ["dotnet", "SyncTask.dll", "/app/source", "/app/target", "/app/logs/log.txt", "5"]
+      - D:/Dockerbox/:/app
+    entrypoint: ["dotnet", "SyncTask.dll", "/app/source", "/app/target", "/app/log.txt", "5"]
