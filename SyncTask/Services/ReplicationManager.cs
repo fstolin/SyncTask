@@ -35,8 +35,8 @@ namespace SyncTask.Services
                 CleanUpSourceDictionary();
                 LogMessageSent?.Invoke(this, new LogEventArgs("Synchronization finished.", MessageType.Info));
             }
-            catch(IOException) {
-                RaiseErrorMessage("I/O error. Please try again.");
+            catch(IOException e) {
+                RaiseErrorMessage("I/O error. Please try again. Replication:\n" + e);
             }
             catch (NotSupportedException)
             {

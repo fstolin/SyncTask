@@ -3,7 +3,9 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.11.35327.3
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SyncTask", "SyncTask\SyncTask.csproj", "{C9838F2E-BDF8-4DFC-B4F1-FAA197CD6C97}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SyncTask", "SyncTask\SyncTask.csproj", "{C9838F2E-BDF8-4DFC-B4F1-FAA197CD6C97}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SyncTaskTests", "SyncTaskTests\SyncTaskTests.csproj", "{4390529B-9979-447F-95C3-BA6714EAF574}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -15,6 +17,10 @@ Global
 		{C9838F2E-BDF8-4DFC-B4F1-FAA197CD6C97}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{C9838F2E-BDF8-4DFC-B4F1-FAA197CD6C97}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{C9838F2E-BDF8-4DFC-B4F1-FAA197CD6C97}.Release|Any CPU.Build.0 = Release|Any CPU
+		{4390529B-9979-447F-95C3-BA6714EAF574}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{4390529B-9979-447F-95C3-BA6714EAF574}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{4390529B-9979-447F-95C3-BA6714EAF574}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{4390529B-9979-447F-95C3-BA6714EAF574}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

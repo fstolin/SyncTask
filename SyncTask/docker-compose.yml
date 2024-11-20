@@ -1,0 +1,12 @@
+services:
+  synctask:
+    build: .
+    image: synctask
+    env_file:
+      - .env
+    volumes:
+      - ${SOURCE}:/app/source
+      - ${TARGET}:/app/target
+      - ${LOG}:/app
+    entrypoint: ["dotnet", "SyncTask.dll"]
+    command: "/app/source /app/target /app/log_docker.txt ${INTERVAL}"
