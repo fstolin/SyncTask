@@ -1,8 +1,12 @@
 services:
   synctask:
+    build: .
     image: synctask
+    env_file:
+      - .env
     volumes:
-      - D:/Dockerbox/Source:/app/source
-      - D:/Dockerbox/Target:/app/target
-      - D:/Dockerbox/:/app
-    entrypoint: ["dotnet", "SyncTask.dll", "/app/source", "/app/target", "/app/log.txt", "5"]
+      - ${SOURCE}:/app/source
+      - ${TARGET}:/app/target
+      - ${LOG}:/app
+    entrypoint: ["dotnet", "SyncTask.dll"]
+    command: "/app/source /app/target /app/log_docker.txt ${INTERVAL}"
