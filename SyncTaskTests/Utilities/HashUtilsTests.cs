@@ -4,7 +4,7 @@ using SyncTask.Utilities;
 namespace SyncTaskTests.Utilities
 {
     [TestFixture]
-    public class HashUtilsTest
+    public class HashUtilsTests
     {
 
         #region Tests for method AreHashesEqual() 
