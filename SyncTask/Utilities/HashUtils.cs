@@ -4,7 +4,7 @@ using SyncTask.Logging;
 
 namespace SyncTask.Utilities
 {
-    static class HashUtils
+    public static class HashUtils
     {
 
         public static event EventHandler<LogEventArgs>? UtilsLogMessageSent;
