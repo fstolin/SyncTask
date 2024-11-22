@@ -33,10 +33,18 @@ namespace SyncTask.Services
 
         private void SetupDependencies()
         {
-            LoggingManager logManager = new LoggingManager(args.LogFilePath);
+            IEventMessageBuilder eventMessageBuilder = new EventMessageBuilder();
+            ILoggingManager fileLogManager = new FileLoggingManager(args.LogFilePath, eventMessageBuilder);
+            ILoggingManager consoleLogManager = new ConsoleLoggingManager(eventMessageBuilder);
+
             replicationManager = new ReplicationManager(args.SourcePath, args.TargetPath);
-            replicationManager.LogMessageSent += logManager.OnLogEventRaised;
-            HashUtils.UtilsLogMessageSent += logManager.OnLogEventRaised;
+
+            // How to do this better?
+            replicationManager.LogMessageSent += fileLogManager.OnLogEventRaised;
+            HashUtils.UtilsLogMessageSent += fileLogManager.OnLogEventRaised;
+            replicationManager.LogMessageSent += consoleLogManager.OnLogEventRaised;
+            HashUtils.UtilsLogMessageSent += consoleLogManager.OnLogEventRaised;
         }
+
     }
 }
