@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 
 namespace SyncTask.Logging
 {
-    internal class EventMessageBuilder : IEventMessageBuilder
+    public class EventMessageBuilder : IEventMessageBuilder
     {
 
         public string BuildMessage(LogEventArgs _event)
